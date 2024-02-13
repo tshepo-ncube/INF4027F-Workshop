@@ -275,7 +275,10 @@
             >
               View Manifesto
             </button>
-            <button class="btn btn-danger fw-bolder px-4 ms-2 fs-8">
+            <button
+              class="btn btn-danger fw-bolder px-4 ms-2 fs-8"
+              id="voteBtn"
+            >
               Vote
             </button>
           </div>
@@ -460,6 +463,7 @@
       signInWithPopup,
       signOut,
       onAuthStateChanged,
+      firebase,
     } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
 
     // Add your own Firebase config here
@@ -473,8 +477,38 @@
       measurementId: "G-BQ911VSE7E",
     };
     const app = initializeApp(firebaseConfig);
+    const db = app.firestore();
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
+
+    // Example function that increments the "Votes" field in a transaction
+    async function incrementVotesTransaction(candidateId) {
+      const candidateRef = db.collection("candidates").doc(candidateId);
+
+      try {
+        // Start a transaction
+        await db.runTransaction(async (transaction) => {
+          // Get the current data of the document
+          const docSnapshot = await transaction.get(candidateRef);
+
+          // Check if the document exists
+          if (!docSnapshot.exists) {
+            throw new Error("Candidate document does not exist!");
+          }
+
+          // Increment the "Votes" field by 1
+          const currentVotes = docSnapshot.data().Votes || 0;
+          const newVotes = currentVotes + 1;
+
+          // Update the document with the incremented value
+          transaction.update(candidateRef, { Votes: newVotes });
+        });
+
+        console.log("Transaction successfully committed!");
+      } catch (error) {
+        console.error("Transaction failed:", error.message);
+      }
+    }
 
     const signInButton = document.getElementById("loginButton");
     const signOutButton = document.getElementById("signoutButton");
@@ -485,6 +519,9 @@
     const registerAsVoterContainer = document.getElementById(
       "registerAsVoterContainer"
     );
+
+    const voteBtn = document.getElementById("voteBtn");
+    console.log(voteBtn);
     //const message = document.getElementById("message");
     //const userName = document.getElementById("userName");
     //const userEmail = document.getElementById("userEmail");
@@ -535,7 +572,17 @@
       }
     });
 
+    const userVote = () => {
+      // Usage example with candidate document ID
+      //const candidateId = "mMeaHNX1CaZfmP9hqlH5";
+      //console.log("voting");
+      // Increment the "Votes" field within a transaction
+      //incrementVotesTransaction(candidateId);
+      alert("voting");
+    };
+
     signInButton.addEventListener("click", userSignIn);
     signOutButton.addEventListener("click", userSignOut);
+    voteBtn.addEventListener("click", userVote);
   </script>
 </html>
